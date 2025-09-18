@@ -15,8 +15,8 @@ export default function Home() {
     setIsProcessing(true)
     
     try {
-      // Vision APIを呼び出して実際の画像を解析
-      const response = await fetch('/api/vision', {
+      // Gemini Vision APIを呼び出して実際の画像を解析
+      const response = await fetch('/api/vision/gemini', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

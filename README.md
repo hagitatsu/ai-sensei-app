@@ -44,8 +44,22 @@
 
 ### デプロイメント
 - **フロントエンド**: Vercel
-- **バックエンド**: Railway
-- **データベース**: Railway PostgreSQL
+- **バックエンド**: Railway（オプション）
+- **画像解析API**: Google Gemini 2.0 Flash（推奨）
+
+## 🎯 APIプロバイダー比較
+
+| プロバイダー | 無料枠 | 料金（1000画像あたり） | 推奨度 |
+|------------|--------|---------------------|--------|
+| **Google Gemini 2.0** | 1分15リクエスト | **約¥4** | ⭐⭐⭐⭐⭐ |
+| OpenAI GPT-4V | なし | 約¥150 | ⭐⭐⭐ |
+| Claude 3.5 | なし | 約¥45 | ⭐⭐⭐ |
+| Together AI | $25クレジット | 約¥3 | ⭐⭐ |
+
+**💡 推奨: Google Gemini 2.0 Flash**
+- 無料枠で小規模運用可能
+- 最もコストパフォーマンスが高い
+- 日本語の教育コンテンツ理解に優れる
 
 ## セットアップ方法
 
@@ -60,13 +74,22 @@ git clone https://github.com/your-username/ai-sensei-app.git
 cd ai-sensei-app
 ```
 
-### 2. フロントエンドのセットアップ
+### 2. APIキーの取得（無料）
+
+#### Google Gemini（推奨）
+1. [Google AI Studio](https://aistudio.google.com/apikey)にアクセス
+2. "Create API Key"をクリック（Googleアカウントが必要）
+3. APIキーをコピー
+
+### 3. フロントエンドのセットアップ
 ```bash
 npm install
 cp .env.example .env.local
-# .env.localファイルを編集して以下を設定：
-# - OPENAI_API_KEY: OpenAI APIキー（Vision API使用に必須）
-# - MATHPIX_APP_ID, MATHPIX_APP_KEY: Mathpix APIキー（オプション）
+
+# .env.localファイルを編集：
+GEMINI_API_KEY=あなたのGemini_APIキー
+
+# アプリを起動
 npm run dev
 ```
 
