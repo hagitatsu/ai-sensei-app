@@ -1,6 +1,4 @@
 'use client'
-
-import { useState, useEffect } from 'react'
 import GameScreen from './components/GameScreen'
 import { Star, BookOpen, Trophy } from 'lucide-react'
 
