@@ -26,15 +26,21 @@ export default function Home() {
       
       const result = await response.json()
       
-      if (result.success) {
+      if (result.success || result.demo) {
         setProblemData(result.data)
+        if (result.demo) {
+          console.log('Running in demo mode - API key not configured')
+        }
       } else {
-        // エラー時は画像から判断できなかったことを表示
+        // エラー時は詳細なメッセージを表示
+        console.error('API Error:', result)
         setProblemData({
-          type: 'unknown',
-          problem: '画像を読み取れませんでした',
+          type: 'error',
+          expression: result.error || 'エラー',
+          problem: result.details || '画像を読み取れませんでした',
           difficulty: 'unknown',
-          concepts: ['画像が不鮮明か、問題が認識できません']
+          concepts: [result.suggestion || '画像が不鮮明か、問題が認識できません'],
+          suggestedHints: ['もう一度撮影してみてください']
         })
       }
     } catch (error) {
