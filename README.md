@@ -45,7 +45,7 @@
 ### デプロイメント
 - **フロントエンド**: Vercel
 - **バックエンド**: Railway（オプション）
-- **画像解析API**: Google Gemini 2.0 Flash（推奨）
+- **画像解析API**: Google Gemini 2.0 Flash Experimental (`gemini-2.0-flash-exp`)
 
 ## 🎯 APIプロバイダー比較
 

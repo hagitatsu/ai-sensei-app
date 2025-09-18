@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     
     const genAI = new GoogleGenerativeAI(geminiApiKey)
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash', // 安定版のモデルを使用（2.0はまだ不安定な可能性）
+      model: 'gemini-2.0-flash-exp', // Gemini 2.0 Flash実験版を使用
     })
 
     // Base64画像データの処理
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.0-flash-exp',
         data: analysisResult
       })
       
@@ -189,14 +189,26 @@ export async function POST(request: NextRequest) {
       // APIエラーの詳細情報
       const errorMessage = apiError.message || 'Unknown API error'
       const isQuotaError = errorMessage.includes('quota') || errorMessage.includes('limit')
+      const isReferrerError = errorMessage.includes('referer') || errorMessage.includes('403') || errorMessage.includes('Forbidden')
+      
+      // エラータイプに応じた適切なメッセージ
+      let userError = 'Gemini API呼び出しエラー'
+      let userSuggestion = 'もう一度お試しください。問題が続く場合は画像を変えてみてください'
+      
+      if (isQuotaError) {
+        userError = 'API利用制限に達しました'
+        userSuggestion = '少し時間をおいて再度お試しください（無料枠: 1分15リクエスト）'
+      } else if (isReferrerError) {
+        userError = 'APIキーの制限設定エラー'
+        userSuggestion = 'Google Cloud ConsoleでAPIキーのHTTPリファラー制限を「なし」に設定してください。サーバーサイドの呼び出しではリファラーヘッダーが送信されないため、この制限は機能しません。'
+      }
       
       return NextResponse.json({
         success: false,
-        error: isQuotaError ? 'API利用制限に達しました' : 'Gemini API呼び出しエラー',
+        error: userError,
         details: errorMessage,
-        suggestion: isQuotaError 
-          ? '少し時間をおいて再度お試しください（無料枠: 1分15リクエスト）' 
-          : 'もう一度お試しください。問題が続く場合は画像を変えてみてください'
+        suggestion: userSuggestion,
+        isReferrerError: isReferrerError
       }, { status: 500 })
     }
 
