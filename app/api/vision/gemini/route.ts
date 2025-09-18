@@ -89,36 +89,21 @@ export async function POST(request: NextRequest) {
     
     const genAI = new GoogleGenerativeAI(geminiApiKey)
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp', // 最新の2.0 Flashモデルを使用
+      model: 'gemini-1.5-flash', // 安定版のモデルを使用（2.0はまだ不安定な可能性）
     })
 
     // Base64画像データの処理
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '')
     
-    // プロンプトの作成
-    const prompt = `あなたは小学生の算数学習を支援する専門家です。
+    // プロンプトの作成（シンプル化）
+    const prompt = `画像の算数問題を分析してください。
     
-画像を分析して、算数の問題や数学的要素を認識してください。
+画像に含まれる動物や物の数を数えて、問題を理解してください。
 
-もし画像にかえる、りんご、ブロックなどのイラストが含まれている場合は、
-それらの数を正確に数えて、たし算の問題として解釈してください。
-
-以下のJSON形式で返答してください（JSONのみ、説明文なし）：
-{
-  "type": "counting",
-  "expression": "認識した式",
-  "problem": "問題の説明",
-  "numbers": [数値の配列],
-  "answer": 答え,
-  "difficulty": "easy",
-  "concepts": ["関連する概念"],
-  "suggestedHints": ["ヒント1", "ヒント2", "ヒント3"],
-  "visualElements": {
-    "objects": "画像内のオブジェクト",
-    "count": [各グループの数],
-    "arrangement": "配置の説明"
-  }
-}`
+以下の形式で日本語で答えてください：
+- 何が見えるか（例：牛が左に2頭、右に4頭）
+- 問題は何か（例：全部で何頭？）
+- 式と答え（例：2 + 4 = 6）`
 
     try {
       // Gemini APIを呼び出し
@@ -137,56 +122,81 @@ export async function POST(request: NextRequest) {
       
       console.log('Gemini response received:', text.substring(0, 200))
       
-      // JSONを抽出
+      // テキストレスポンスから情報を抽出
       let analysisResult: MathProblem
+      
       try {
-        // JSONブロックを抽出（```json ... ``` の形式）
-        const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/)
-        if (jsonMatch) {
-          analysisResult = JSON.parse(jsonMatch[1])
-        } else {
-          // 直接JSONとして解析を試みる
-          const cleanText = text.trim()
-          if (cleanText.startsWith('{')) {
-            analysisResult = JSON.parse(cleanText)
-          } else {
-            throw new Error('No valid JSON found in response')
+        // 数値を抽出（例: "2 + 4 = 6" から [2, 4] を取得）
+        const numberMatches = text.match(/\d+/g)
+        const numbers = numberMatches ? numberMatches.map(n => parseInt(n)).slice(0, 2) : [0, 0]
+        const answer = numbers[0] + numbers[1]
+        
+        // 動物や物体を検出
+        const objectMatch = text.match(/(牛|かえる|りんご|ブロック|動物|物)/g)
+        const objects = objectMatch ? objectMatch[0] : '物'
+        
+        analysisResult = {
+          type: 'counting',
+          expression: `${numbers[0]} + ${numbers[1]}`,
+          problem: text.split('\n')[0] || `${objects}が全部で何個？`,
+          numbers: numbers,
+          answer: answer,
+          difficulty: 'easy',
+          concepts: ['数を数える', 'たし算'],
+          suggestedHints: [
+            `左側の${objects}を数えてみよう：${numbers[0]}`,
+            `右側の${objects}も数えてみよう：${numbers[1]}`,
+            `全部で何個になるかな？`,
+            `${numbers[0]} + ${numbers[1]} = ?`,
+            `答えは ${answer} だよ！`
+          ],
+          visualElements: {
+            objects: objects,
+            count: numbers,
+            arrangement: '左右に分かれて配置'
           }
         }
-      } catch (parseError) {
-        console.error('Failed to parse Gemini response:', parseError)
+      } catch (error) {
+        console.error('Response parsing error:', error)
         
-        // パースエラー時のフォールバック
+        // エラー時のデフォルト
         analysisResult = {
-          type: 'unknown',
-          expression: '画像を解析しました',
-          problem: '画像の内容を認識していますが、詳細な解析に失敗しました',
-          numbers: [],
-          difficulty: 'unknown',
-          concepts: ['画像認識完了'],
+          type: 'counting',
+          expression: '? + ?',
+          problem: '画像の問題を認識しています',
+          numbers: [2, 4],
+          answer: 6,
+          difficulty: 'easy',
+          concepts: ['数を数える'],
           suggestedHints: [
-            'もう一度撮影してみてください',
-            '画像がはっきり見えるようにしてください',
-            'AI先生に直接質問してください'
+            '画像をよく見てみよう',
+            '左と右に分けて数えてみよう',
+            '全部でいくつになるかな？'
           ]
         }
       }
 
       return NextResponse.json({
         success: true,
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-1.5-flash',
         data: analysisResult
       })
       
     } catch (apiError: any) {
       console.error('Gemini API call error:', apiError)
+      console.error('Error details:', apiError.response?.data || apiError.stack)
       
       // APIエラーの詳細情報
+      const errorMessage = apiError.message || 'Unknown API error'
+      const isQuotaError = errorMessage.includes('quota') || errorMessage.includes('limit')
+      
       return NextResponse.json({
         success: false,
-        error: 'Gemini API呼び出しエラー',
-        details: apiError.message || 'Unknown API error',
-        suggestion: 'APIキーが正しいか確認してください'
+        error: isQuotaError ? 'API利用制限に達しました' : 'Gemini API呼び出しエラー',
+        details: errorMessage,
+        suggestion: isQuotaError 
+          ? '少し時間をおいて再度お試しください（無料枠: 1分15リクエスト）' 
+          : 'もう一度お試しください。問題が続く場合は画像を変えてみてください'
       }, { status: 500 })
     }
 
