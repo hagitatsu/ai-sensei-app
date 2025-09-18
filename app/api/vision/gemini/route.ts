@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     
     const genAI = new GoogleGenerativeAI(geminiApiKey)
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-1.5-flash', // より安定したモデルを使用
+      model: 'gemini-2.0-flash-exp', // 最新の2.0 Flashモデルを使用
     })
 
     // Base64画像データの処理
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.0-flash-exp',
         data: analysisResult
       })
       
