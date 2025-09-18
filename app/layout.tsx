@@ -13,7 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className="min-h-screen bg-gradient-to-b from-blue-50 to-green-50">
+      <body className="min-h-screen bg-gradient-to-b from-blue-50 to-green-50 text-gray-800">
         <div className="container mx-auto px-4 py-8">
           {children}
         </div>

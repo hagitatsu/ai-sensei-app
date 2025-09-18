@@ -164,7 +164,7 @@ export default function GameScreen({ onGameEnd, playerName }: GameScreenProps) {
             value={userAnswer}
             onChange={(e) => setUserAnswer(e.target.value)}
             placeholder="こたえ"
-            className="w-32 px-4 py-3 text-3xl text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-32 px-4 py-3 text-3xl text-center text-gray-800 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             min="0"
             max="20"
           />
