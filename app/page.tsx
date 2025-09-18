@@ -14,18 +14,41 @@ export default function Home() {
     setUploadedImage(imageData)
     setIsProcessing(true)
     
-    // ここでOpenAI Vision APIを呼び出す予定
-    // 今は仮のデータをセット
-    setTimeout(() => {
-      setProblemData({
-        type: 'addition',
-        problem: '8 + 5',
-        difficulty: 'medium',
-        concepts: ['繰り上がりのある足し算']
+    try {
+      // Vision APIを呼び出して実際の画像を解析
+      const response = await fetch('/api/vision', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ image: imageData }),
       })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        setProblemData(result.data)
+      } else {
+        // エラー時は画像から判断できなかったことを表示
+        setProblemData({
+          type: 'unknown',
+          problem: '画像を読み取れませんでした',
+          difficulty: 'unknown',
+          concepts: ['画像が不鮮明か、問題が認識できません']
+        })
+      }
+    } catch (error) {
+      console.error('画像解析エラー:', error)
+      setProblemData({
+        type: 'error',
+        problem: 'エラーが発生しました',
+        difficulty: 'unknown',
+        concepts: ['もう一度お試しください']
+      })
+    } finally {
       setIsProcessing(false)
       setSessionStarted(true)
-    }, 1500)
+    }
   }
 
   const handleReset = () => {
@@ -79,10 +102,36 @@ export default function Home() {
                 )}
                 
                 {problemData && (
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <p className="text-sm text-blue-800 font-semibold mb-1">認識された問題：</p>
-                    <p className="text-2xl font-bold text-blue-900">{problemData.problem}</p>
-                    <p className="text-sm text-blue-600 mt-2">
+                  <div className={`p-4 rounded-lg ${
+                    problemData.type === 'error' || problemData.type === 'unknown' 
+                      ? 'bg-red-50' 
+                      : 'bg-blue-50'
+                  }`}>
+                    <p className={`text-sm font-semibold mb-1 ${
+                      problemData.type === 'error' || problemData.type === 'unknown'
+                        ? 'text-red-800'
+                        : 'text-blue-800'
+                    }`}>
+                      {problemData.type === 'error' || problemData.type === 'unknown' 
+                        ? '⚠️ 認識エラー' 
+                        : '✅ 認識された問題：'}
+                    </p>
+                    <p className={`text-2xl font-bold ${
+                      problemData.type === 'error' || problemData.type === 'unknown'
+                        ? 'text-red-900'
+                        : 'text-blue-900'
+                    }`}>
+                      {problemData.expression || problemData.problem}
+                    </p>
+                    {problemData.visualElements && (
+                      <p className="text-sm text-blue-700 mt-2">
+                        🖼️ {problemData.visualElements.objects} 
+                        {problemData.visualElements.count && 
+                          ` (${problemData.visualElements.count.join(', ')})`
+                        }
+                      </p>
+                    )}
+                    <p className="text-sm text-gray-600 mt-2">
                       タイプ: {problemData.concepts.join(', ')}
                     </p>
                   </div>
