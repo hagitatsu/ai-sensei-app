@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
         console.error('Claude response parsing error:', parseError)
         
         // テキスト解析フォールバック
-        const numbers = text.match(/\d+/g)?.map(n => parseInt(n)) || [1, 1]
+        const numbers = text.match(/\d+/g)?.map((n: string) => parseInt(n)) || [1, 1]
         const objectMatch = text.match(/(カエル|かえる|りんご|リンゴ|ボール|図形|物)/i)
         const mainObject = objectMatch ? objectMatch[0] : '物'
         
