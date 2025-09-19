@@ -95,42 +95,47 @@ export async function POST(request: NextRequest) {
     // Base64画像データの処理
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '')
     
-    // 改良されたプロンプト（小学1年生向け算数問題認識専用）
-    const prompt = `あなたは小学1年生の算数問題を正確に認識する専門家です。画像を慎重に分析して、以下の項目を日本語で詳しく答えてください。
+    // 超厳密カウント専用プロンプト
+    const prompt = `あなたは幼児教育の専門家で、物の数を数えることのプロです。
 
-【重要】画像内の物体を注意深く数えてください。1つ1つ正確に数えることが最も重要です。
+🚨【超重要】この画像の動物や物を正確に数えてください。1つでも数え間違いは許されません。
 
-【画像分析手順】
-1. 全体を観察：
-   - 画像全体を見て、どんな教育的な内容か理解する
-   - 算数問題のパターンを認識する
+🔍【絶対厳守の数え方】
 
-2. 物体の詳細認識：
-   - 動物や物体の種類は何ですか？（かえる、りんご、ブロック、数字など）
-   - 左側エリアに何個ありますか？1つずつ数えてください
-   - 右側エリアに何個ありますか？1つずつ数えてください
-   - 上側や他のエリアにも物体はありますか？
+STEP 1: 物体の識別
+- 画像に何が描かれていますか？
+- その物体の色や特徴は？
 
-3. 配置と関係性：
-   - 物体はどのようにグループ化されていますか？
-   - 明確に分けられたグループがありますか？
-   - 問題として何を求めているように見えますか？
+STEP 2: 左側エリアの精密カウント
+- 画像の左半分を見てください
+- 左側の物体を指差しながら数える：「1、2、3、4...」
+- 上の段と下の段を別々に数える
+- 左側の合計は何個ですか？
 
-【正確な数値抽出】
-- 左グループ：__個
-- 右グループ：__個  
-- その他：__個
-- 合計を求める問題の場合：__ + __ = __
+STEP 3: 右側エリアの精密カウント  
+- 画像の右半分を見てください
+- 右側の物体を指差しながら数える：「1、2、3、4...」
+- 上の段と下の段を別々に数える
+- 右側の合計は何個ですか？
 
-【回答形式（必ず この形式で）】
-視覚要素：[物体の種類]が左に[正確な数]個、右に[正確な数]個
-配置：[詳細な配置説明]
-問題種類：[たし算/ひき算/数える/比較]
-数式：[正確な数式]
-問題文：[問題の内容]
-答え：[計算結果]
+STEP 4: 最終確認
+- 左側 + 右側 = 全体の数
+- 計算が正しいか確認
 
-重要：必ず物体を1つ1つ丁寧に数えて、正確な数を報告してください。推測ではなく、見えるものを正確に数えることが重要です。`
+【必須回答フォーマット】
+見えるもの：[動物や物の名前]
+左側の数：[正確な数]個
+右側の数：[正確な数]個
+全体の数：[左側+右側]個
+答え：[左側]＋[右側]＝[合計]
+
+【🔥 絶対に守ること】
+- 見落としは厳禁：すべての物体を数える
+- 二重カウント禁止：同じものを2回数えない  
+- 推測禁止：見えるものだけ正確に数える
+- 必ず左右別々に数えてから合計する
+
+今すぐ画像を詳しく見て、物体を1つ1つ丁寧に数えてください！`
 
     try {
       // Gemini APIを呼び出し
@@ -152,6 +157,19 @@ export async function POST(request: NextRequest) {
       // 改良されたテキストレスポンス解析
       let analysisResult: MathProblem
       
+      // オブジェクトの種類を抽出（より多くのパターンに対応） - スコープを広げる
+      const objectPatterns = [
+        'かえる', 'カエル', 'frog', 'りんご', 'リンゴ', 'apple', '牛', 'うし', 'cow', 
+        'ブロック', 'block', 'ボール', 'ball', '花', 'はな', 'flower', 
+        '鳥', 'とり', 'bird', '魚', 'さかな', 'fish', '猫', 'ねこ', 'cat',
+        '犬', 'いぬ', 'dog', '△', '○', '□', '三角', '丸', '四角', '図形'
+      ]
+      
+      const detectedObjects = objectPatterns.filter(pattern => 
+        text.toLowerCase().includes(pattern.toLowerCase())
+      )
+      const mainObject = detectedObjects[0] || '物'
+      
       try {
         console.log('Full Gemini response:', text)
         
@@ -162,59 +180,87 @@ export async function POST(request: NextRequest) {
         const visualElementsLine = lines.find(line => line.includes('視覚要素：')) || 
                                   lines.find(line => line.includes('視覚要素') || line.includes('見える')) || text
         
-        // オブジェクトの種類を抽出（より多くのパターンに対応）
-        const objectPatterns = [
-          'かえる', 'カエル', 'frog', 'りんご', 'リンゴ', 'apple', '牛', 'うし', 'cow', 
-          'ブロック', 'block', 'ボール', 'ball', '花', 'はな', 'flower', 
-          '鳥', 'とり', 'bird', '魚', 'さかな', 'fish', '猫', 'ねこ', 'cat',
-          '犬', 'いぬ', 'dog', '△', '○', '□', '三角', '丸', '四角', '図形'
-        ]
-        
-        const detectedObjects = objectPatterns.filter(pattern => 
-          text.toLowerCase().includes(pattern.toLowerCase())
-        )
-        const mainObject = detectedObjects[0] || '物'
-        
-        // より精密な数式抽出（構造化回答から）
-        const mathLine = lines.find(line => line.includes('数式：'))
-        const answerLine = lines.find(line => line.includes('答え：'))
-        
+        // 超精密な構造化レスポンス解析
         let numbers: number[] = []
         let answer: number | undefined
         let mathType: 'addition' | 'subtraction' | 'counting' = 'counting'
         let expression = ''
         
-        // 構造化された数式行から直接抽出
-        if (mathLine) {
-          console.log('Found math line:', mathLine)
-          const mathExpressions = [
-            /(\d+)\s*[+＋]\s*(\d+)\s*[=＝]\s*(\d+)/,  // 3 + 2 = 5
-            /(\d+)\s*[+＋]\s*(\d+)/,                   // 3 + 2
-            /(\d+)\s*[-－]\s*(\d+)\s*[=＝]\s*(\d+)/,  // 5 - 2 = 3
-            /(\d+)\s*[-－]\s*(\d+)/                    // 5 - 2
+        // シンプル構造化回答から抽出
+        const objectLine = lines.find(line => line.includes('見えるもの：'))
+        const leftCountLine = lines.find(line => line.includes('左側の数：'))
+        const rightCountLine = lines.find(line => line.includes('右側の数：'))
+        const totalLine = lines.find(line => line.includes('全体の数：'))
+        const answerLine = lines.find(line => line.includes('答え：'))
+        
+        console.log('シンプル構造化回答解析:')
+        console.log('見えるもの:', objectLine)
+        console.log('左側の数:', leftCountLine) 
+        console.log('右側の数:', rightCountLine)
+        console.log('全体の数:', totalLine)
+        console.log('答え:', answerLine)
+        
+        // シンプルに左右の個数を抽出
+        let leftCount = 0, rightCount = 0, totalCount = 0
+        
+        if (leftCountLine) {
+          const leftMatch = leftCountLine.match(/(\d+)個/)
+          if (leftMatch) {
+            leftCount = parseInt(leftMatch[1])
+            console.log('左側カウント:', leftCount)
+          }
+        }
+        
+        if (rightCountLine) {
+          const rightMatch = rightCountLine.match(/(\d+)個/)
+          if (rightMatch) {
+            rightCount = parseInt(rightMatch[1])
+            console.log('右側カウント:', rightCount)
+          }
+        }
+        
+        if (totalLine) {
+          const totalMatch = totalLine.match(/(\d+)個/)
+          if (totalMatch) {
+            totalCount = parseInt(totalMatch[1])
+            console.log('全体合計:', totalCount)
+            
+            // 全体の数が分かっている場合、それを最優先にする
+            if (leftCount > 0 && rightCount === 0) {
+              rightCount = totalCount - leftCount
+            } else if (rightCount > 0 && leftCount === 0) {
+              leftCount = totalCount - rightCount
+            }
+          }
+        }
+        
+        // 答え行から数式パターンも抽出（バックアップ）
+        if (answerLine) {
+          const mathPatterns = [
+            /(\d+)\s*[+＋]\s*(\d+)\s*[=＝]\s*(\d+)/,
+            /(\d+)\s*[+＋]\s*(\d+)/,
+            /(\d+)\s*[-－]\s*(\d+)\s*[=＝]\s*(\d+)/,
+            /(\d+)\s*[-－]\s*(\d+)/
           ]
           
-          for (const pattern of mathExpressions) {
-            const match = mathLine.match(pattern)
+          for (const pattern of mathPatterns) {
+            const match = answerLine.match(pattern)
             if (match) {
-              numbers = [parseInt(match[1]), parseInt(match[2])]
-              if (match[3]) answer = parseInt(match[3])
+              if (leftCount === 0) leftCount = parseInt(match[1])
+              if (rightCount === 0) rightCount = parseInt(match[2])
+              if (match[3] && !answer) answer = parseInt(match[3])
               
               if (pattern.source.includes('[+＋]')) {
                 mathType = 'addition'
-                expression = `${numbers[0]} + ${numbers[1]}`
-                if (!answer) answer = numbers[0] + numbers[1]
               } else if (pattern.source.includes('[-－]')) {
-                mathType = 'subtraction'  
-                expression = `${numbers[0]} - ${numbers[1]}`
-                if (!answer) answer = numbers[0] - numbers[1]
+                mathType = 'subtraction'
               }
               break
             }
           }
         }
         
-        // 答え行から答えを抽出（数式で答えが見つからない場合）
+        // 答え行から答えを抽出
         if (!answer && answerLine) {
           const answerMatch = answerLine.match(/(\d+)/)
           if (answerMatch) {
@@ -222,20 +268,57 @@ export async function POST(request: NextRequest) {
           }
         }
         
-        // さらに視覚要素行から個数を抽出
-        if (numbers.length === 0 && visualElementsLine) {
-          console.log('Extracting numbers from visual elements:', visualElementsLine)
-          // "左に3匹、右に2匹" のようなパターンから数値を抽出
-          const leftMatch = visualElementsLine.match(/左[^0-9]*(\d+)/)
-          const rightMatch = visualElementsLine.match(/右[^0-9]*(\d+)/)
+        // フォールバック：テキスト全体から「左に○個、右に○個」パターンを探す
+        if (leftCount === 0 || rightCount === 0) {
+          console.log('フォールバック解析開始')
+          const leftPatterns = [
+            /左[^0-9]*(\d+)[^0-9]*[個匹]/g,
+            /左[^0-9]*(\d+)/g,
+            /左側[^0-9]*(\d+)/g
+          ]
+          const rightPatterns = [
+            /右[^0-9]*(\d+)[^0-9]*[個匹]/g,
+            /右[^0-9]*(\d+)/g,
+            /右側[^0-9]*(\d+)/g
+          ]
           
-          if (leftMatch && rightMatch) {
-            numbers = [parseInt(leftMatch[1]), parseInt(rightMatch[1])]
-            expression = `${numbers[0]} + ${numbers[1]}`
-            answer = numbers[0] + numbers[1]
-            mathType = 'addition'
+          for (const pattern of leftPatterns) {
+            const match = text.match(pattern)
+            if (match && leftCount === 0) {
+              leftCount = parseInt(match[1])
+              console.log('左側個数検出:', leftCount)
+              break
+            }
+          }
+          
+          for (const pattern of rightPatterns) {
+            const match = text.match(pattern)
+            if (match && rightCount === 0) {
+              rightCount = parseInt(match[1])
+              console.log('右側個数検出:', rightCount)
+              break
+            }
           }
         }
+        
+        // 最終的な値設定
+        numbers = [leftCount, rightCount].filter(n => n > 0)
+        if (numbers.length >= 2) {
+          if (mathType === 'subtraction') {
+            expression = `${numbers[0]} - ${numbers[1]}`
+            if (!answer) answer = numbers[0] - numbers[1]
+          } else {
+            mathType = 'addition'
+            expression = `${numbers[0]} + ${numbers[1]}`
+            if (!answer) answer = numbers[0] + numbers[1]
+          }
+        } else if (numbers.length === 1) {
+          expression = `${numbers[0]}個`
+          answer = numbers[0]
+          mathType = 'counting'
+        }
+        
+        console.log('最終解析結果:', { numbers, expression, answer, mathType })
         
         // 数式が見つからない場合は単純な数値を探す
         if (numbers.length === 0) {
@@ -307,6 +390,8 @@ export async function POST(request: NextRequest) {
         // 少なくとも数字を抽出する試み
         const fallbackNumbers = text.match(/\d+/g)
         const nums = fallbackNumbers ? fallbackNumbers.slice(0, 2).map(n => parseInt(n)) : [1, 1]
+        
+        // フォールバック用のオブジェクト名はすでに定義済みのmainObjectを使用
         
         analysisResult = {
           type: 'counting',

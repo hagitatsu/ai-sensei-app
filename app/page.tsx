@@ -204,7 +204,7 @@ export default function Home() {
                       <div className="mt-3">
                         <p className="text-sm text-red-700 font-semibold mb-2">💡 解決方法:</p>
                         <ul className="text-sm text-red-600 space-y-1">
-                          {problemData.suggestedHints?.map((hint, index) => (
+                          {problemData.suggestedHints?.map((hint: string, index: number) => (
                             <li key={index} className="flex items-start">
                               <span className="mr-2">•</span>
                               {hint}
