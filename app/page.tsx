@@ -15,7 +15,7 @@ export default function Home() {
     setIsProcessing(true)
     
     try {
-      // Gemini Vision APIを呼び出して実際の画像を解析
+      // 強化されたGemini Vision APIを呼び出して高精度な画像解析
       const response = await fetch('/api/vision/gemini', {
         method: 'POST',
         headers: {
@@ -27,9 +27,39 @@ export default function Home() {
       const result = await response.json()
       
       if (result.success || result.demo) {
-        setProblemData(result.data)
+        const data = result.data
+        
+        // マルチAPI結果の信頼度チェック
+        const isHighConfidence = result.meta?.confidence && result.meta.confidence > 0.8
+        const hasConsensus = result.meta?.consensus
+        
+        // 信頼度に基づいたメッセージ生成
+        let confidenceMessage = ''
+        if (hasConsensus) {
+          confidenceMessage = '✅ 複数AIで検証済み'
+        } else if (isHighConfidence) {
+          confidenceMessage = '⚡ 高精度解析完了'
+        } else if (result.meta) {
+          confidenceMessage = '⚠️ 解析完了（要確認）'
+        }
+        
+        // 改良されたproblemDataセット
+        const enhancedData = {
+          ...data,
+          problem: confidenceMessage ? `${confidenceMessage}: ${data.problem}` : data.problem,
+          metadata: result.meta // API結果のメタ情報を保存
+        }
+        
+        setProblemData(enhancedData)
+        
         if (result.demo) {
           console.log('Running in demo mode - API key not configured')
+        } else if (result.meta) {
+          console.log('Multi-API result:', {
+            primary: result.primary,
+            confidence: result.meta.confidence,
+            consensus: result.meta.consensus
+          })
         }
       } else {
         // エラー時はより詳細で子どもにも分かりやすいメッセージを表示

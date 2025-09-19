@@ -95,58 +95,61 @@ export async function POST(request: NextRequest) {
     // Base64画像データの処理
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '')
     
-    // 超厳密カウント専用プロンプト（さらに強化版）
-    const prompt = `🧮 あなたは数学のプロフェッショナルです。幼稚園児にも分かるよう、画像の物を正確に数えてください。
+    // 究極精度のカウント専用プロンプト（完璧版）
+    const prompt = `🎯 CRITICAL MISSION: Perfect Counting Analysis
 
-🚨【絶対ルール】数え間違いは1つもしてはいけません！
+あなたは世界最高の数学教育専門家です。この画像の数え問題を100%完璧に解析してください。
 
-🔬【超精密カウント手順】
+🚨【ZERO TOLERANCE for errors】1つでも数え間違えたら失格です！
 
-📌 STEP 1: 画像の詳細観察
-- 何が描かれていますか？（かえる、りんご、など）
-- 色、大きさ、位置を詳しく観察
-- 重なっているものはありますか？
+🔍【ULTRA-PRECISE METHOD】
 
-📌 STEP 2: 左半分を数える
-- 画像を縦半分に分けて、左側だけに集中
-- 上から下へ、左から右へ順番に数える
-- 「1匹目、2匹目、3匹目...」と声に出して数える
-- 左側の合計：？個
+🟦 PHASE 1: Deep Image Analysis
+- 物体の種類: かえる/りんご/図形/その他？
+- 配置パターン: グループ分け/整列/散らばり？
+- 視覚的特徴: 色・サイズ・重なり状況
+- 問題の文字: 何と書いてありますか？
 
-📌 STEP 3: 右半分を数える  
-- 今度は右側だけに集中
-- 同じように「1匹目、2匹目、3匹目...」と数える
-- 右側の合計：？個
+🟩 PHASE 2: Grid-Based Systematic Count
+画像を4つのエリアに分割:
+- 左上エリア: [  ]個
+- 右上エリア: [  ]個  
+- 左下エリア: [  ]個
+- 右下エリア: [  ]個
 
-📌 STEP 4: 全体確認
-- 左側の数 ＋ 右側の数 ＝ 全体の数
-- 数え忘れや重複がないか再確認
+🟨 PHASE 3: Cross-Validation (必須)
+Method A - 左右分割: 左[  ]個 + 右[  ]個 = [  ]個
+Method B - 上下分割: 上[  ]個 + 下[  ]個 = [  ]個  
+Method C - 個別カウント: 1,2,3,4,5,6,7... = [  ]個
 
-📌 STEP 5: 3回検証
-1回目：左から右へ数える
-2回目：上から下へ数える  
-3回目：ランダムに数える
-※ 3回とも同じ結果になるまで繰り返す
+🟪 PHASE 4: Mathematical Problem Construction
+- 数式パターン認識: 足し算/引き算/単純カウント
+- 教育レベル評価: 幼稚園/小学校低学年向け
+- 具体的解法ステップの構築
 
-【🎯 必須回答形式】
-見えるもの：[動物・物の名前]
-左側カウント：[正確な数]個
-右側カウント：[正確な数]個  
-検証1回目：[数]個
-検証2回目：[数]個
-検証3回目：[数]個
-最終答え：[左側数]＋[右側数]＝[合計数]個
+【🎯 MANDATORY OUTPUT FORMAT】
+見えるもの：[具体的な物体名]
+問題文：[画像の文字があれば正確に転記]
+左上：[数]個｜右上：[数]個｜左下：[数]個｜右下：[数]個
+左半分：[数]個｜右半分：[数]個
+上半分：[数]個｜下半分：[数]個
+個別確認：[1,2,3,4,5,6,7...]番まで = [数]個
+最終確定：[数式] = [答え]
 
-【⚠️ 致命的エラー防止】
-❌ 推測・適当は絶対禁止
-❌ 同じものを2回数えない
-❌ 見えないものを数えない  
-❌ 部分的に隠れているものも1個としてカウント
-✅ 見えるものを1個ずつ丁寧にカウント
-✅ 左右で分けて別々に数える
-✅ 必ず3回検証して確実にする
+具体的教育ヒント：
+1. [この画像の具体的内容に基づいた解法ステップ1]
+2. [視覚的要素を活用した数え方のコツ]  
+3. [この数量に関連した日常生活の例え]
+4. [確実に答えを導く検証方法]
+5. [理解を深める発展的な質問]
 
-今すぐ画像を拡大して、1つ1つの物体を指差しながら数えてください！`
+【🔥 ABSOLUTE REQUIREMENTS】
+- 推測一切禁止 - 見えるもののみカウント
+- テンプレート回答禁止 - この画像専用の具体的アドバイス
+- 複数方法での検証必須
+- 教育的価値の高いヒント提供
+
+NOW ANALYZE THIS IMAGE WITH MATHEMATICAL PRECISION!`
 
     try {
       // Gemini APIを呼び出し
@@ -212,40 +215,59 @@ export async function POST(request: NextRequest) {
         console.log('全体の数:', totalLine)
         console.log('答え:', answerLine)
         
-        // 新しい強化されたフォーマットに対応した抽出
-        let leftCount = 0, rightCount = 0, totalCount = 0
+        // 究極強化フォーマット対応の抽出システム
+        let leftCount = 0, rightCount = 0, totalCount = 0, finalAnswer = 0
         
-        // 新フォーマットに対応
-        const leftCountNewLine = lines.find(line => line.includes('左側カウント：'))
-        const rightCountNewLine = lines.find(line => line.includes('右側カウント：'))
-        const finalAnswerLine = lines.find(line => line.includes('最終答え：'))
+        // 最新フォーマット対応（複数パターンで検出）
+        const patterns = {
+          leftHalf: lines.find(line => line.includes('左半分：') || line.includes('左側：')),
+          rightHalf: lines.find(line => line.includes('右半分：') || line.includes('右側：')),
+          finalConfirm: lines.find(line => line.includes('最終確定：') || line.includes('最終答え：')),
+          individualCount: lines.find(line => line.includes('個別確認：') || line.includes('番まで'))
+        }
         
-        // 新フォーマット優先で抽出
-        if (leftCountNewLine) {
-          const leftMatch = leftCountNewLine.match(/(\d+)個/)
+        console.log('Enhanced parsing patterns found:', {
+          leftHalf: !!patterns.leftHalf,
+          rightHalf: !!patterns.rightHalf, 
+          finalConfirm: !!patterns.finalConfirm,
+          individual: !!patterns.individualCount
+        })
+        
+        // 左半分の数を抽出（複数パターン対応）
+        if (patterns.leftHalf) {
+          const leftMatch = patterns.leftHalf.match(/(\d+)個/)
           if (leftMatch) {
             leftCount = parseInt(leftMatch[1])
-            console.log('左側カウント（新）:', leftCount)
-          }
-        } else if (leftCountLine) {
-          const leftMatch = leftCountLine.match(/(\d+)個/)
-          if (leftMatch) {
-            leftCount = parseInt(leftMatch[1])
-            console.log('左側カウント（旧）:', leftCount)
+            console.log('左半分カウント:', leftCount)
           }
         }
         
-        if (rightCountNewLine) {
-          const rightMatch = rightCountNewLine.match(/(\d+)個/)
+        // 右半分の数を抽出
+        if (patterns.rightHalf) {
+          const rightMatch = patterns.rightHalf.match(/(\d+)個/)
           if (rightMatch) {
             rightCount = parseInt(rightMatch[1])
-            console.log('右側カウント（新）:', rightCount)
+            console.log('右半分カウント:', rightCount)
           }
-        } else if (rightCountLine) {
-          const rightMatch = rightCountLine.match(/(\d+)個/)
-          if (rightMatch) {
-            rightCount = parseInt(rightMatch[1])
-            console.log('右側カウント（旧）:', rightCount)
+        }
+        
+        // 最終確定から数式と答えを抽出
+        if (patterns.finalConfirm) {
+          const finalMatch = patterns.finalConfirm.match(/(\d+)\s*[+＋]\s*(\d+)\s*[=＝]\s*(\d+)/)
+          if (finalMatch) {
+            if (leftCount === 0) leftCount = parseInt(finalMatch[1])
+            if (rightCount === 0) rightCount = parseInt(finalMatch[2])
+            finalAnswer = parseInt(finalMatch[3])
+            console.log('最終確定数式:', `${leftCount} + ${rightCount} = ${finalAnswer}`)
+          }
+        }
+        
+        // 個別カウントから総数を抽出（バックアップ）
+        if (patterns.individualCount) {
+          const individualMatch = patterns.individualCount.match(/=\s*(\d+)個/)
+          if (individualMatch && !finalAnswer) {
+            finalAnswer = parseInt(individualMatch[1])
+            console.log('個別カウント総数:', finalAnswer)
           }
         }
         
@@ -331,16 +353,30 @@ export async function POST(request: NextRequest) {
           }
         }
         
-        // 最終的な値設定
+        // 強化された最終値設定
+        const finalTotal = finalAnswer || leftCount + rightCount
         numbers = [leftCount, rightCount].filter(n => n > 0)
-        if (numbers.length >= 2) {
+        
+        if (numbers.length >= 2 && finalTotal > 0) {
           if (mathType === 'subtraction') {
             expression = `${numbers[0]} - ${numbers[1]}`
-            if (!answer) answer = numbers[0] - numbers[1]
+            answer = finalAnswer || (numbers[0] - numbers[1])
           } else {
-            mathType = 'addition'
+            mathType = 'addition' 
             expression = `${numbers[0]} + ${numbers[1]}`
-            if (!answer) answer = numbers[0] + numbers[1]
+            answer = finalAnswer || (numbers[0] + numbers[1])
+          }
+        } else if (finalTotal > 0) {
+          // 個別カウントの結果を優先
+          answer = finalTotal
+          if (leftCount > 0 && rightCount > 0) {
+            numbers = [leftCount, rightCount]
+            expression = `${leftCount} + ${rightCount}`
+            mathType = 'addition'
+          } else {
+            numbers = [finalTotal]
+            expression = `${finalTotal}個`
+            mathType = 'counting'
           }
         } else if (numbers.length === 1) {
           expression = `${numbers[0]}個`
@@ -367,13 +403,32 @@ export async function POST(request: NextRequest) {
           }
         }
         
+        // 具体的教育ヒントの抽出
+        const hintsStartIndex = lines.findIndex(line => line.includes('具体的教育ヒント') || line.includes('教育ヒント'))
+        const specificHints = []
+        
+        if (hintsStartIndex >= 0) {
+          // ヒントセクション以降の行を解析
+          for (let i = hintsStartIndex + 1; i < lines.length && i < hintsStartIndex + 8; i++) {
+            const line = lines[i]
+            if (line.match(/^\d+\./)) { // 1. 2. 3. 形式のヒント
+              const hint = line.replace(/^\d+\.\s*/, '').trim()
+              if (hint && hint.length > 10 && !hint.includes('一緒に') && !hint.includes('がんばって')) {
+                specificHints.push(hint)
+              }
+            }
+          }
+        }
+        
+        console.log('Extracted specific hints:', specificHints.length, 'items')
+        
         // 問題文の抽出（構造化回答から）
         const problemLine = lines.find(line => line.includes('問題文：')) || 
                            lines.find(line => line.includes('問題文') || line.includes('何') || line.includes('どんな'))
         
         const problemText = problemLine 
           ? problemLine.replace(/^[^：:]*[:：]\s*/, '').trim()
-          : `${mainObject}の数を数える問題だよ`
+          : `${mainObject}の数を数える問題です`
         
         // 配置情報の抽出（構造化回答から）
         const arrangementLine = lines.find(line => line.includes('配置：')) ||
@@ -388,23 +443,37 @@ export async function POST(request: NextRequest) {
           problemType = 'comparison'
         }
         
+        // 高品質な具体的ヒントの生成
+        let qualityHints = specificHints
+        
+        if (qualityHints.length === 0) {
+          // フォールバック: この問題専用のヒント生成
+          qualityHints = [
+            `画像の${mainObject}に注目して、左右に分けて数えてみよう`,
+            numbers.length >= 2 
+              ? `左側に${numbers[0]}個、右側に${numbers[1]}個あることを確認しよう`
+              : `全部で${answer || numbers[0] || 0}個の${mainObject}が見えるね`,
+            `指を使って一つずつ「1、2、3...」と数えてみよう`,
+            expression 
+              ? `数式で表すと「${expression}」になるよ`
+              : `数を数えることから始めよう`,
+            answer !== undefined 
+              ? `最終的な答えは${answer}個だね。確認してみよう！`
+              : '正確に数えることが大切だよ'
+          ]
+        }
+        
         analysisResult = {
           type: problemType,
           expression: expression || `${mainObject}を数えよう`,
           problem: problemText,
           numbers: numbers,
           answer: answer,
-          difficulty: 'easy',
-          concepts: mathType === 'addition' ? ['数を数える', 'たし算'] : 
-                   mathType === 'subtraction' ? ['数を数える', 'ひき算'] :
-                   ['数を数える'],
-          suggestedHints: [
-            `画像をよく見てみよう`,
-            `${mainObject}を1つずつ数えてみよう`,
-            numbers.length >= 2 ? `左に${numbers[0]}個、右に${numbers[1]}個だね` : `全部で${numbers[0] || 0}個だね`,
-            expression ? `式にすると：${expression}` : '数を数えてみよう',
-            answer !== undefined ? `答えは${answer}だよ！` : 'がんばって数えてみよう！'
-          ],
+          difficulty: (answer || 0) <= 5 ? 'easy' : (answer || 0) <= 10 ? 'medium' : 'hard',
+          concepts: mathType === 'addition' ? ['数を数える', 'たし算', '視覚的認識'] : 
+                   mathType === 'subtraction' ? ['数を数える', 'ひき算', '視覚的認識'] :
+                   ['数を数える', '視覚的認識'],
+          suggestedHints: qualityHints.slice(0, 5), // 最大5つの高品質ヒント
           visualElements: {
             objects: mainObject,
             count: numbers,
