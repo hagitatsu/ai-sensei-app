@@ -451,8 +451,8 @@ export async function POST(request: NextRequest) {
         data: analysisResult,
         debug: {
           fullResponse: text.length > 1000 ? text.substring(0, 1000) + '...[truncated]' : text,
-          detectedNumbers: numbers,
-          mathType: mathType,
+          detectedNumbers: analysisResult.numbers || [],
+          mathType: analysisResult.type,
           objectType: mainObject
         }
       })
