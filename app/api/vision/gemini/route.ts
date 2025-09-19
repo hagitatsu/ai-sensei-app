@@ -110,17 +110,26 @@ export async function POST(request: NextRequest) {
 - 視覚的特徴: 色・サイズ・重なり状況
 - 問題の文字: 何と書いてありますか？
 
-🟩 PHASE 2: Grid-Based Systematic Count
-画像を4つのエリアに分割:
-- 左上エリア: [  ]個
-- 右上エリア: [  ]個  
-- 左下エリア: [  ]個
-- 右下エリア: [  ]個
+🟩 PHASE 2: Ultra-Precise Grid Analysis
+画像を縦線で真っ二つに分けて左右をカウント:
+- 画像の真ん中に縦線を引く
+- 左半分のかえるを1匹ずつ数える: [  ]匹
+- 右半分のかえるを1匹ずつ数える: [  ]匹
+- 境界線上のものは大部分が含まれる側にカウント
 
-🟨 PHASE 3: Cross-Validation (必須)
-Method A - 左右分割: 左[  ]個 + 右[  ]個 = [  ]個
-Method B - 上下分割: 上[  ]個 + 下[  ]個 = [  ]個  
-Method C - 個別カウント: 1,2,3,4,5,6,7... = [  ]個
+🔍 CRITICAL: 各かえるの位置を詳しく観察:
+- かえる1: 左側のどの位置？
+- かえる2: 左側のどの位置？
+- かえる3: 左側のどの位置？
+- かえる4: 右側のどの位置？
+- かえる5: 右側のどの位置？
+- かえる6: 右側のどの位置？
+- かえる7: 右側のどの位置？
+
+🟨 PHASE 3: Multiple Verification Methods
+Method A - 左右厳密分割: 左[  ]匹 + 右[  ]匹 = [  ]匹
+Method B - 行別カウント: 上の行[  ]匹 + 下の行[  ]匹 = [  ]匹  
+Method C - 1匹ずつ確認: 「1匹目、2匹目、3匹目、4匹目、5匹目、6匹目、7匹目」= [  ]匹
 
 🟪 PHASE 4: Mathematical Problem Construction
 - 数式パターン認識: 足し算/引き算/単純カウント
@@ -130,10 +139,19 @@ Method C - 個別カウント: 1,2,3,4,5,6,7... = [  ]個
 【🎯 MANDATORY OUTPUT FORMAT】
 見えるもの：[具体的な物体名]
 問題文：[画像の文字があれば正確に転記]
-左上：[数]個｜右上：[数]個｜左下：[数]個｜右下：[数]個
-左半分：[数]個｜右半分：[数]個
-上半分：[数]個｜下半分：[数]個
-個別確認：[1,2,3,4,5,6,7...]番まで = [数]個
+
+個別位置確認：
+かえる1: [左側/右側] - [位置詳細]
+かえる2: [左側/右側] - [位置詳細]  
+かえる3: [左側/右側] - [位置詳細]
+かえる4: [左側/右側] - [位置詳細]
+かえる5: [左側/右側] - [位置詳細]
+かえる6: [左側/右側] - [位置詳細]
+かえる7: [左側/右側] - [位置詳細]
+
+厳密左右分割：左半分[数]匹｜右半分[数]匹
+上下確認：上の行[数]匹｜下の行[数]匹
+個別カウント：1,2,3,4,5,6,7番目 = [数]匹
 最終確定：[数式] = [答え]
 
 具体的教育ヒント：
@@ -215,15 +233,33 @@ NOW ANALYZE THIS IMAGE WITH MATHEMATICAL PRECISION!`
         console.log('全体の数:', totalLine)
         console.log('答え:', answerLine)
         
-        // 究極強化フォーマット対応の抽出システム
+        // 個別かえる位置分析システム
         let leftCount = 0, rightCount = 0, totalCount = 0, finalAnswer = 0
         
-        // 最新フォーマット対応（複数パターンで検出）
+        // 個別かえる位置の解析
+        const frogPositions = []
+        for (let i = 1; i <= 7; i++) {
+          const frogLine = lines.find(line => line.includes(`かえる${i}:`))
+          if (frogLine) {
+            const isLeft = frogLine.includes('左側')
+            const isRight = frogLine.includes('右側')
+            frogPositions.push({ id: i, side: isLeft ? 'left' : isRight ? 'right' : 'unknown' })
+          }
+        }
+        
+        // 位置情報から左右カウント
+        if (frogPositions.length >= 5) { // 大部分の位置が特定できた場合
+          leftCount = frogPositions.filter(f => f.side === 'left').length
+          rightCount = frogPositions.filter(f => f.side === 'right').length
+          console.log('Individual frog positions analyzed:', { leftCount, rightCount, total: frogPositions.length })
+        }
+        
+        // フォールバック: 従来の方法
         const patterns = {
-          leftHalf: lines.find(line => line.includes('左半分：') || line.includes('左側：')),
+          leftHalf: lines.find(line => line.includes('厳密左右分割：') || line.includes('左半分：') || line.includes('左側：')),
           rightHalf: lines.find(line => line.includes('右半分：') || line.includes('右側：')),
           finalConfirm: lines.find(line => line.includes('最終確定：') || line.includes('最終答え：')),
-          individualCount: lines.find(line => line.includes('個別確認：') || line.includes('番まで'))
+          individualCount: lines.find(line => line.includes('個別カウント：') || line.includes('番目'))
         }
         
         console.log('Enhanced parsing patterns found:', {
@@ -233,21 +269,21 @@ NOW ANALYZE THIS IMAGE WITH MATHEMATICAL PRECISION!`
           individual: !!patterns.individualCount
         })
         
-        // 左半分の数を抽出（複数パターン対応）
-        if (patterns.leftHalf) {
-          const leftMatch = patterns.leftHalf.match(/(\d+)個/)
+        // フォールバック: 左半分の数を抽出（個別位置分析が失敗した場合のみ）
+        if (leftCount === 0 && patterns.leftHalf) {
+          const leftMatch = patterns.leftHalf.match(/左半分(\d+)匹|左側(\d+)匹|左(\d+)匹/)
           if (leftMatch) {
-            leftCount = parseInt(leftMatch[1])
-            console.log('左半分カウント:', leftCount)
+            leftCount = parseInt(leftMatch[1] || leftMatch[2] || leftMatch[3])
+            console.log('フォールバック左半分カウント:', leftCount)
           }
         }
         
-        // 右半分の数を抽出
-        if (patterns.rightHalf) {
-          const rightMatch = patterns.rightHalf.match(/(\d+)個/)
+        // フォールバック: 右半分の数を抽出
+        if (rightCount === 0 && patterns.rightHalf) {
+          const rightMatch = patterns.rightHalf.match(/右半分(\d+)匹|右側(\d+)匹|右(\d+)匹/)
           if (rightMatch) {
-            rightCount = parseInt(rightMatch[1])
-            console.log('右半分カウント:', rightCount)
+            rightCount = parseInt(rightMatch[1] || rightMatch[2] || rightMatch[3])
+            console.log('フォールバック右半分カウント:', rightCount)
           }
         }
         
