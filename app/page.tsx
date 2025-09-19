@@ -10,7 +10,7 @@ export default function Home() {
   const [problemData, setProblemData] = useState<any>(null)
   const [sessionStarted, setSessionStarted] = useState(false)
 
-  const handleImageUpload = async (imageData: string) => {
+  const handleImageUpload = async (imageData: string, retryCount: number = 0) => {
     setUploadedImage(imageData)
     setIsProcessing(true)
     
@@ -32,24 +32,76 @@ export default function Home() {
           console.log('Running in demo mode - API key not configured')
         }
       } else {
-        // エラー時は詳細なメッセージを表示
+        // エラー時はより詳細で子どもにも分かりやすいメッセージを表示
         console.error('API Error:', result)
+        
+        let errorMessage = '画像を読み取れませんでした'
+        let suggestions = ['もう一度撮影してみてください']
+        
+        if (result.isReferrerError) {
+          errorMessage = 'APIの設定に問題があります'
+          suggestions = [
+            '管理者に設定の確認をお願いしてください',
+            'しばらく時間をおいてからもう一度お試しください'
+          ]
+        } else if (result.details?.includes('quota') || result.details?.includes('limit')) {
+          errorMessage = '一時的に利用が集中しています'
+          suggestions = [
+            'しばらく時間をおいてからもう一度お試しください',
+            '画像がはっきり写っているか確認してみてください'
+          ]
+        } else if (result.details?.includes('network') || result.details?.includes('connection')) {
+          errorMessage = 'インターネット接続に問題があります'
+          suggestions = [
+            'インターネット接続を確認してください',
+            'もう一度お試しください'
+          ]
+        } else {
+          suggestions = [
+            '問題がはっきり写っているか確認してください',
+            '明るい場所で撮影してみてください',
+            '数字や絵がよく見えるように撮ってください',
+            'もう一度撮影してみてください'
+          ]
+        }
+        
         setProblemData({
           type: 'error',
-          expression: result.error || 'エラー',
-          problem: result.details || '画像を読み取れませんでした',
+          expression: result.error || errorMessage,
+          problem: result.details || errorMessage,
           difficulty: 'unknown',
-          concepts: [result.suggestion || '画像が不鮮明か、問題が認識できません'],
-          suggestedHints: ['もう一度撮影してみてください']
+          concepts: [result.suggestion || '画像認識でエラーが発生しました'],
+          suggestedHints: suggestions
         })
       }
     } catch (error) {
       console.error('画像解析エラー:', error)
+      
+      let errorMessage = 'エラーが発生しました'
+      let suggestions = ['もう一度お試しください']
+      
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        errorMessage = 'インターネット接続に問題があります'
+        suggestions = [
+          'インターネット接続を確認してください',
+          'しばらく時間をおいてからもう一度お試しください'
+        ]
+      } else if (error instanceof Error) {
+        errorMessage = 'システムエラーが発生しました'
+        suggestions = [
+          'ページを再読み込みしてみてください',
+          'しばらく時間をおいてからもう一度お試しください',
+          '問題が続く場合は管理者にお知らせください'
+        ]
+      }
+      
       setProblemData({
         type: 'error',
-        problem: 'エラーが発生しました',
+        expression: errorMessage,
+        problem: errorMessage,
         difficulty: 'unknown',
-        concepts: ['もう一度お試しください']
+        concepts: ['システムエラー'],
+        suggestedHints: suggestions
       })
     } finally {
       setIsProcessing(false)
@@ -62,6 +114,12 @@ export default function Home() {
     setProblemData(null)
     setSessionStarted(false)
     setIsProcessing(false)
+  }
+
+  const handleRetry = () => {
+    if (uploadedImage) {
+      handleImageUpload(uploadedImage)
+    }
   }
 
   return (
@@ -100,7 +158,8 @@ export default function Home() {
                       <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center">
                         <div className="text-white text-center">
                           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-2"></div>
-                          <p>問題を読み取っています...</p>
+                          <p>AI先生が問題を読み取っています...</p>
+                          <p className="text-sm mt-1">少々お待ちください</p>
                         </div>
                       </div>
                     )}
@@ -140,15 +199,42 @@ export default function Home() {
                     <p className="text-sm text-gray-600 mt-2">
                       タイプ: {problemData.concepts.join(', ')}
                     </p>
+                    {/* エラーの場合はヒントを表示 */}
+                    {(problemData.type === 'error' || problemData.type === 'unknown') && (
+                      <div className="mt-3">
+                        <p className="text-sm text-red-700 font-semibold mb-2">💡 解決方法:</p>
+                        <ul className="text-sm text-red-600 space-y-1">
+                          {problemData.suggestedHints?.map((hint, index) => (
+                            <li key={index} className="flex items-start">
+                              <span className="mr-2">•</span>
+                              {hint}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                <button
-                  onClick={handleReset}
-                  className="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition duration-200"
-                >
-                  新しい問題をアップロード
-                </button>
+                <div className="space-y-2">
+                  {/* エラーの場合は再試行ボタンを追加 */}
+                  {problemData?.type === 'error' && (
+                    <button
+                      onClick={handleRetry}
+                      disabled={isProcessing}
+                      className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-bold py-3 px-4 rounded-lg transition duration-200"
+                    >
+                      {isProcessing ? '処理中...' : '🔄 もう一度試す'}
+                    </button>
+                  )}
+                  
+                  <button
+                    onClick={handleReset}
+                    className="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg transition duration-200"
+                  >
+                    新しい問題をアップロード
+                  </button>
+                </div>
               </div>
             )}
           </div>
